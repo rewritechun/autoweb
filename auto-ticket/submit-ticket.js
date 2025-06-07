@@ -24,24 +24,23 @@ const { chromium } = require('playwright');
     await page.waitForTimeout(2000);
 
     console.log('🔐 提交登录信息...');
-    const inputs = await page.locator('input').all();
-    await inputs[0].click();
+    const usernameInput = page.locator('input[placeholder="请输入身份证号/手机号"]');
+    await usernameInput.waitFor({ timeout: 10000 });
+    await usernameInput.click();
     await page.waitForTimeout(500);
-    await inputs[0].fill('13211012200');
+    await usernameInput.fill('13211012200');
     await page.waitForTimeout(500);
-    await inputs[1].click();
+
+    const passwordInput = page.locator('input[placeholder="请输入密码"]');
+    await passwordInput.waitFor({ timeout: 10000 });
+    await passwordInput.click();
     await page.waitForTimeout(500);
-    await inputs[1].fill('Khhly123.');
+    await passwordInput.fill('Khhly123.');
     await page.waitForTimeout(1000);
 
-    const buttons = await page.locator('button').all();
-    for (const btn of buttons) {
-      const text = await btn.textContent();
-      if (text.includes('登录') && !text.includes('扫码')) {
-        await btn.click();
-        break;
-      }
-    }
+    const loginBtn = page.locator('button.login-but:has-text("登录")');
+    await loginBtn.waitFor({ timeout: 10000 });
+    await loginBtn.click();
     await page.waitForTimeout(5000);
 
     console.log('❎ 关闭弹窗...');
