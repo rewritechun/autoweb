@@ -1,13 +1,15 @@
 {
-  "functions": {
-    "api/submit-ticket.js": {
-      "runtime": "nodejs18.x",
-      "memory": 1024,
-      "maxDuration": 60
-    }
-  },
+  "version": 2,
   "builds": [
-    { "src": "api/**/*.js", "use": "@vercel/node" }
+    {
+      "src": "api/submit-ticket.js",
+      "use": "@vercel/node"
+    }
   ],
-  "outputDirectory": "api"
+  "routes": [
+    {
+      "src": "/api/submit-ticket",
+      "dest": "api/submit-ticket.js"
+    }
+  ]
 }
