@@ -1,13 +1,17 @@
-// server.js
 import express from 'express';
-import handler from './api/submit-ticket.js';
+import submitTicket from './api/submit-ticket.js';
 
 const app = express();
-const PORT = process.env.PORT || 10000;
+const port = process.env.PORT || 3000;
 
-app.get('/', (req, res) => res.send('✅ 服务已部署，访问 /submit 开始填报'));
-app.get('/submit', handler);
+app.use(express.json());
 
-app.listen(PORT, () => {
-  console.log(`✅ Server is running on http://localhost:${PORT}`);
+app.get('/', (req, res) => {
+  res.send('✅ 服务已启动！');
+});
+
+app.post('/submit-ticket', submitTicket);
+
+app.listen(port, () => {
+  console.log(`🚀 服务运行中：http://localhost:${port}`);
 });
