@@ -1,0 +1,7 @@
+{
+  "name": "auto-ticket",
+  "version": "1.0.0",
+  "dependencies": {
+    "puppeteer": "^21.3.8"
+  }
+}
