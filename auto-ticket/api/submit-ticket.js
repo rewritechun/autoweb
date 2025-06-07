@@ -1,10 +1,8 @@
 import puppeteer from 'puppeteer';
 import { join } from 'path';
 
-const chromePath = join(
-  '/opt/render/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64',
-  'chrome'
-);
+const chromePath = './.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome';
+
 
 async function main() {
   try {
