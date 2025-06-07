@@ -1,11 +1,11 @@
 {
   "name": "auto-ticket",
   "version": "1.0.0",
-  "main": "api/submit-ticket.js",
+  "main": "submit-ticket.js",
   "scripts": {
-    "start": "node api/submit-ticket.js"
+    "start": "node submit-ticket.js"
   },
   "dependencies": {
-    "playwright": "^1.44.0"
+    "playwright": "^1.52.0"
   }
 }
