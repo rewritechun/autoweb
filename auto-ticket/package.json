@@ -1,12 +1,11 @@
 {
   "name": "auto-ticket",
   "version": "1.0.0",
-  "type": "module",
+  "main": "api/submit-ticket.js",
   "scripts": {
-    "start": "node api/submit-ticket.js",
-    "postinstall": "npx playwright install"
+    "start": "node api/submit-ticket.js"
   },
   "dependencies": {
-    "@playwright/test": "^1.44.1"
+    "playwright": "^1.44.0"
   }
 }
