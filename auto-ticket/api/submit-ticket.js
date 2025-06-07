@@ -1,9 +1,16 @@
 import puppeteer from 'puppeteer';
+import { join } from 'path';
+
+const chromePath = join(
+  '/opt/render/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64',
+  'chrome'
+);
 
 async function main() {
   try {
     const browser = await puppeteer.launch({
       headless: 'new',
+      executablePath: chromePath,
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
 
