@@ -10,74 +10,80 @@ const { chromium } = require('playwright');
   try {
     console.log('🌐 打开登录页面...');
     await page.goto('https://gd.119.gov.cn/society/login', { timeout: 60000 });
-    await page.waitForLoadState('load');
+
+    // 延迟确保页面加载
     await page.waitForTimeout(3000);
 
     console.log('🧭 点击“账号密码登录”标签...');
-    const tabs = await page.locator('text=账号密码登录');
-    if (await tabs.first().isVisible()) {
-      await tabs.first().click();
-      await page.waitForTimeout(2000);
-    } else {
-      throw new Error('❌ 未找到账号密码登录标签');
-    }
+    const tabLoc = page.locator('div:has-text("账号密码登录")').nth(0);
+    await tabLoc.waitFor({ state: 'visible', timeout: 10000 });
+    await tabLoc.click();
+    await page.waitForTimeout(2000);
 
     console.log('🔐 提交登录信息...');
-    const inputs = page.locator('input');
-    await inputs.nth(0).waitFor({ state: 'visible', timeout: 10000 });
-    await inputs.nth(0).click();
-    await page.waitForTimeout(200);
-    await inputs.nth(0).fill('13211012200');
 
-    await inputs.nth(1).click();
-    await page.waitForTimeout(200);
-    await inputs.nth(1).fill('Khhly123.');
+    // 输入账号
+    const userInput = page.locator('input[placeholder="请输入身份证号/手机号"]');
+    await userInput.waitFor({ state: 'visible', timeout: 10000 });
+    await userInput.click();
+    await userInput.fill('13211012200');
+    await page.waitForTimeout(1000);
 
-    const loginBtn = page.locator('button:has-text("登录")');
-    await loginBtn.waitFor({ state: 'visible', timeout: 10000 });
-    await loginBtn.click();
-    await page.waitForTimeout(5000); // 等待页面跳转
+    // 输入密码
+    const pwdInput = page.locator('input[placeholder="请输入密码"]');
+    await pwdInput.waitFor({ state: 'visible', timeout: 10000 });
+    await pwdInput.click();
+    await pwdInput.fill('Khhly123.');
+    await page.waitForTimeout(1000);
 
-    console.log('🧹 检查是否有弹窗...');
+    // 点击登录按钮（精确范围）
+    const loginBtns = page.locator('.login-box .login-but');
+    if (await loginBtns.count() > 0) {
+      await loginBtns.first().click();
+    } else {
+      throw new Error('❌ 未找到登录按钮');
+    }
+
+    // 等待页面跳转
+    await page.waitForLoadState('networkidle', { timeout: 15000 });
+    await page.waitForTimeout(3000);
+
+    console.log('✅ 登录成功，处理后续操作...');
+
+    // 关闭弹窗（如果存在）
     const closeBtn = page.locator('button[aria-label="el.dialog.close"]');
-    if (await closeBtn.isVisible({ timeout: 3000 })) {
+    if (await closeBtn.isVisible({ timeout: 5000 })) {
       await closeBtn.click();
       await page.waitForTimeout(1000);
     }
 
-    console.log('🛠️ 点击“自查自改”按钮...');
-    const checkBtn = page.locator('text=自查自改');
-    await checkBtn.waitFor({ state: 'visible', timeout: 10000 });
-    await checkBtn.click();
+    // 点击“自查自改”
+    console.log('📝 点击“自查自改”按钮...');
+    const zczgBtn = page.locator('text=自查自改');
+    await zczgBtn.waitFor({ state: 'visible', timeout: 10000 });
+    await zczgBtn.click();
     await page.waitForTimeout(3000);
 
-    console.log('🔍 查找未巡查工单...');
-    const rows = await page.locator('tr:has-text("未巡查")');
-    const count = await rows.count();
+    // 查找是否存在“未巡查”记录
+    const unPatrolled = page.locator('td:has-text("未巡查")');
+    if (await unPatrolled.count() > 0) {
+      console.log('📌 发现未巡查记录，点击工单填报...');
+      const fillButton = unPatrolled.first().locator('..').locator('button:has-text("工单填报")');
+      await fillButton.click();
+      await page.waitForTimeout(2000);
 
-    if (count > 0) {
-      console.log(`📌 发现 ${count} 条未巡查记录，开始填报...`);
-      for (let i = 0; i < count; i++) {
-        const row = rows.nth(i);
-        const fillBtn = row.locator('text=工单填报');
-        if (await fillBtn.isVisible({ timeout: 3000 })) {
-          await fillBtn.click();
-          await page.waitForTimeout(1500);
-          const submitBtn = page.locator('button:has-text("提交")');
-          if (await submitBtn.isVisible({ timeout: 3000 })) {
-            await submitBtn.click();
-            await page.waitForTimeout(2000);
-          }
-        }
-      }
+      const submitButton = page.locator('button:has-text("提交")');
+      await submitButton.waitFor({ state: 'visible', timeout: 10000 });
+      await submitButton.click();
+      console.log('✅ 工单提交成功');
     } else {
-      console.log('✅ 当前无未巡查工单，无需操作。');
+      console.log('✅ 无未巡查项，无需操作');
     }
 
-    console.log('🎉 脚本执行完毕。');
   } catch (err) {
     console.error('❌ 执行过程中出错：', err);
   } finally {
     await browser.close();
+    console.log('🛑 脚本执行完毕，浏览器已关闭');
   }
 })();
