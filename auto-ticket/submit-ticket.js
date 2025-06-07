@@ -1,65 +1,72 @@
 const { chromium } = require('playwright');
 
 (async () => {
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
-
   console.log("🚀 启动 Playwright 脚本...");
-  await page.goto('https://gd.119.gov.cn/society/login', { waitUntil: 'domcontentloaded' });
-  console.log("🌐 打开登录页面...");
 
-  // 点击“账号密码登录”标签
-  const pwdLoginBtn = page.locator('text=账号密码登录');
-  await pwdLoginBtn.first().click();
-  await page.waitForTimeout(1500);
+  const browser = await chromium.launch({ headless: true });
+  const context = await browser.newContext();
+  const page = await context.newPage();
 
-  // 填写账号和密码
-  await page.getByPlaceholder('请输入身份证号/手机号').click();
-  await page.getByPlaceholder('请输入身份证号/手机号').fill('13211012200');
-  await page.waitForTimeout(500);
-  await page.getByPlaceholder('请输入密码').click();
-  await page.getByPlaceholder('请输入密码').fill('Khhly123.');
-  await page.waitForTimeout(500);
+  try {
+    console.log("🌐 打开登录页面...");
+    await page.goto('https://gd.119.gov.cn/society/login', { waitUntil: 'networkidle' });
+    await page.waitForTimeout(2000); // 等待页面完全渲染
 
-  // 点击“登录”按钮
-  await page.click('button:has-text("登录")');
-  console.log("🔐 提交登录信息...");
-  await page.waitForTimeout(5000);
-
-  // 关闭弹窗
-  const closeBtn = page.locator('button[aria-label="el.dialog.close"]');
-  if (await closeBtn.isVisible()) {
-    await closeBtn.click();
-    console.log("❎ 已关闭弹窗");
+    console.log("🧭 点击“账号密码登录”标签...");
+    const tabs = await page.locator('text=账号密码登录');
+    await tabs.first().click();
     await page.waitForTimeout(1000);
-  }
 
-  // 点击“自查自改”
-  await page.click('text=自查自改');
-  console.log("📋 进入自查自改模块...");
-  await page.waitForTimeout(3000);
+    console.log("🔐 提交登录信息...");
+    await page.click('input[placeholder="请输入身份证号/手机号"]');
+    await page.fill('input[placeholder="请输入身份证号/手机号"]', '13211012200');
 
-  // 查找未巡查的工单行
-  const unfinished = await page.locator('tr:has(td:text("未巡查"))').first();
+    await page.click('input[placeholder="请输入密码"]');
+    await page.fill('input[placeholder="请输入密码"]', 'Khhly123.');
 
-  if (await unfinished.isVisible()) {
-    console.log("🔍 检测到未巡查工单，准备填报...");
-    const fillBtn = unfinished.locator('text=工单填报');
-    await fillBtn.click();
+    await page.waitForTimeout(1000);
+    await page.click('button:has-text("登录")');
+
+    await page.waitForNavigation({ waitUntil: 'networkidle' });
+    await page.waitForTimeout(3000); // 页面加载缓冲
+
+    console.log("✅ 登录成功，关闭弹窗...");
+    const closeBtn = page.locator('button[aria-label="el.dialog.close"]');
+    if (await closeBtn.isVisible()) {
+      await closeBtn.click();
+      await page.waitForTimeout(1000);
+    }
+
+    console.log("🛠️ 点击“自查自改”...");
+    const checkButton = page.locator('text=自查自改');
+    await checkButton.click();
     await page.waitForTimeout(2000);
 
-    // 点击提交
-    const submitBtn = page.locator('button:has-text("提交")');
-    await submitBtn.click();
-    console.log("✅ 工单已提交");
+    console.log("🔍 检查是否存在“未巡查”工单...");
+    const rows = await page.locator('table').locator('tr:has-text("未巡查")');
+    const count = await rows.count();
 
-  } else {
-    console.log("✔️ 所有工单已完成，无需处理");
+    if (count > 0) {
+      console.log(`📋 发现 ${count} 项未巡查，开始填报...`);
+      const firstRow = rows.first();
+
+      // 点击“填报”按钮
+      const reportButton = firstRow.locator('button:has-text("填报")');
+      await reportButton.click();
+      await page.waitForTimeout(2000);
+
+      // 假设这里你知道需要填写的内容（如果有输入框你要继续补充）
+      const submitBtn = page.locator('button:has-text("提交")');
+      await submitBtn.click();
+      await page.waitForTimeout(2000);
+
+      console.log("✅ 工单已成功提交！");
+    } else {
+      console.log("✔️ 所有工单均已完成，无需操作。");
+    }
+  } catch (error) {
+    console.error("❌ 执行过程中出错：", error);
+  } finally {
+    await browser.close();
   }
-
-  await browser.close();
-  console.log("🎉 自动化流程已完成");
-
-})().catch((err) => {
-  console.error("❌ 执行过程中出错：", err);
-});
+})();
