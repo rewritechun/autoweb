@@ -75,7 +75,6 @@ export default async function handler(req, res) {
     res.status(500).send(`❌ 自动提交失败：${err.message}`);
   }
 }
-import puppeteer from 'puppeteer';
 
 export default async function handler(req, res) {
   try {
