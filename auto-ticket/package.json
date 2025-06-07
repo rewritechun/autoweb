@@ -1,7 +1,12 @@
 {
   "name": "auto-ticket",
   "version": "1.0.0",
+  "main": "api/submit-ticket.js",
+  "type": "module",
+  "scripts": {
+    "start": "node api/submit-ticket.js"
+  },
   "dependencies": {
-    "puppeteer": "^21.3.8"
+    "puppeteer": "^22.8.2"
   }
 }
