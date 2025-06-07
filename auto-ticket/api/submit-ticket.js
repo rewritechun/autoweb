@@ -1,102 +1,48 @@
-// auto-ticket/api/submit-ticket.js
 import puppeteer from 'puppeteer';
 
-export default async function handler(req, res) {
-  try {
-    const browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+export default async function submitTicket(req, res) {
+  const { username, password, content } = req.body;
 
-    const page = await browser.newPage();
-    await page.goto('https://gd.119.gov.cn/society/login', { waitUntil: 'networkidle2' });
-
-    // 点击“账号密码登录”
-    await page.waitForSelector('.flex-center.margin-t30 .cursor', { timeout: 10000 });
-    const loginButtons = await page.$$('.flex-center.margin-t30 .cursor');
-    await loginButtons[0].click();
-
-    await page.waitForTimeout(1000);
-
-    // 输入账号
-    await page.type('#el-id-6203-3', '13211012200', { delay: 100 });
-
-    // 输入密码
-    await page.type('#el-id-6203-4', 'Khhly123.', { delay: 100 });
-
-    // 点击登录按钮
-    await page.click('.login-but.c-white.font-20');
-
-    await page.waitForTimeout(2000);
-
-    // 关闭提示弹窗
-    const closeBtn = await page.$('button.el-dialog__headerbtn');
-    if (closeBtn) await closeBtn.click();
-
-    await page.waitForTimeout(1000);
-
-    // 点击“自查自改”
-    const items = await page.$x("//li[contains(., '自查自改')]");
-    if (items.length > 0) await items[0].click();
-    else throw new Error("找不到‘自查自改’按钮");
-
-    await page.waitForTimeout(2000);
-
-    // 获取未填报工单
-    const rows = await page.$$('tbody tr');
-    let filled = true;
-    for (const row of rows) {
-      const status = await row.$eval('.el-table_3_column_23 .cell', el => el.innerText.trim());
-      if (status.includes('未巡查')) {
-        filled = false;
-        const btn = await row.$('.el-table_3_column_24 .cell span');
-        if (btn) await btn.click();
-        break;
-      }
-    }
-
-    if (filled) {
-      await browser.close();
-      return res.status(200).send('✅ 今日已填报，无需重复操作！');
-    }
-
-    await page.waitForTimeout(1500);
-
-    // 点击“提交”按钮
-    const submitBtn = await page.$('button.el-button.gd-button-confirm');
-    if (submitBtn) await submitBtn.click();
-
-    await page.waitForTimeout(1500);
-    await browser.close();
-
-    res.status(200).send('✅ 工单已成功提交！');
-  } catch (err) {
-    console.error(err);
-    res.status(500).send(`❌ 自动提交失败：${err.message}`);
+  if (!username || !password || !content) {
+    return res.status(400).json({ error: '请提供完整的账号、密码和工单内容。' });
   }
-}
 
-export default async function handler(req, res) {
   try {
     const browser = await puppeteer.launch({
-      headless: 'new',
+      headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
-
     const page = await browser.newPage();
 
-    // 示例：访问某网页（换成你要自动化的页面）
-    await page.goto('https://gd.119.gov.cn/society/login', { waitUntil: 'networkidle2' });
+    // 访问登录页
+    await page.goto('https://gd.119.gov.cn/society/login', {
+      waitUntil: 'networkidle2'
+    });
 
-    // 示例：可以继续模拟点击/输入/表单提交等
-    // await page.type('#username', '你的用户名');
-    // await page.type('#password', '你的密码');
-    // await page.click('#loginBtn');
+    // 填写账号密码
+    await page.type('#username', username);
+    await page.type('#password', password);
+
+    // 点击登录
+    await Promise.all([
+      page.click('#loginBtn'), // 按钮 ID 视实际情况调整
+      page.waitForNavigation({ waitUntil: 'networkidle2' })
+    ]);
+
+    // 登录成功后跳转到工单页面
+    await page.goto('https://gd.119.gov.cn/society/ticket', {
+      waitUntil: 'networkidle2'
+    });
+
+    // 填写工单内容
+    await page.type('#ticketContent', content); // 假设这个是工单内容框 ID
+    await page.click('#submitBtn'); // 提交按钮 ID 视页面而定
 
     await browser.close();
-    res.status(200).send('✅ 工单流程执行成功');
+
+    return res.json({ success: true, message: '✅ 工单提交成功' });
   } catch (error) {
-    console.error('❌ 出错:', error);
-    res.status(500).send('❌ 执行失败：' + error.message);
+    console.error('❌ 自动提交失败:', error);
+    return res.status(500).json({ error: '提交过程中发生错误', detail: error.message });
   }
 }
