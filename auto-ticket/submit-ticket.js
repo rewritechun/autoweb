@@ -14,9 +14,11 @@ const { chromium } = require('playwright');
   await page.waitForTimeout(1500);
 
   // 填写账号和密码
-  await page.fill('input[placeholder="请输入身份证号/手机号"]', '13211012200');
+  await page.getByPlaceholder('请输入身份证号/手机号').click();
+  await page.getByPlaceholder('请输入身份证号/手机号').fill('13211012200');
   await page.waitForTimeout(500);
-  await page.fill('input[placeholder="请输入密码"]', 'Khhly123.');
+  await page.getByPlaceholder('请输入密码').click();
+  await page.getByPlaceholder('请输入密码').fill('Khhly123.');
   await page.waitForTimeout(500);
 
   // 点击“登录”按钮
