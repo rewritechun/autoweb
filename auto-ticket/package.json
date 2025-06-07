@@ -1,12 +1,14 @@
 {
   "name": "auto-ticket",
   "version": "1.0.0",
+  "description": "工单自动化提交接口",
   "main": "server.js",
+  "type": "module",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "puppeteer": "^22.8.2",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "puppeteer": "^22.8.2"
   }
 }
