@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/submit-ticket.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/submit-ticket",
+      "dest": "api/submit-ticket.js"
+    }
+  ]
+}
