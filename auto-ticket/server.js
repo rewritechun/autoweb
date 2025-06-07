@@ -1,5 +1,5 @@
 import express from 'express';
-import handler from './api/submit-ticket.js'; // 不要再写成 ./auto-ticket/api/submit-ticket
+import handler from './api/submit-ticket.js';
 
 const app = express();
 const port = process.env.PORT || 10000;
