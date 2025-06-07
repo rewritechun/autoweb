@@ -1,8 +1,9 @@
-FROM mcr.microsoft.com/playwright:v1.44.0-jammy
+FROM mcr.microsoft.com/playwright:v1.52.0-jammy
 
 WORKDIR /app
+
 COPY . .
 
-RUN npm install
+RUN yarn install
 
 CMD ["node", "api/submit-ticket.js"]
