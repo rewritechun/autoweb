@@ -6,4 +6,4 @@ COPY . .
 
 RUN yarn install
 
-CMD ["node", "api/submit-ticket.js"]
+CMD ["yarn", "start"]
