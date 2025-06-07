@@ -24,9 +24,11 @@ const { chromium } = require('playwright');
   await page.fill('input[placeholder="请输入密码"]', 'Khhly123.');
   await page.waitForTimeout(500);
 
-  console.log("🔓 点击登录按钮...");
-  await page.click('button:has-text("登录")');
-  await page.waitForTimeout(3000); // 等待页面切换
+  // 等待按钮加载并点击
+  const loginBtn = page.locator('button:has-text("登录")').first();
+  await loginBtn.waitFor({ state: 'visible', timeout: 5000 });
+  await loginBtn.click();
+
 
   console.log("✅ 登录成功，准备处理弹窗...");
   const closeBtn = page.locator('button[aria-label="el.dialog.close"]');
