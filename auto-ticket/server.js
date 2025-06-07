@@ -1,6 +1,6 @@
 // server.js
 import express from 'express';
-import handler from './auto-ticket/api/submit-ticket.js';
+import handler from './api/submit-ticket.js';
 
 const app = express();
 const PORT = process.env.PORT || 10000;
