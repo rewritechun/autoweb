@@ -1,11 +1,10 @@
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
 
-export default async function handler(req, res) {
-  try {
-    const browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+const browser = await puppeteer.launch({
+  executablePath: '/usr/bin/chromium-browser', // Render 默认路径
+  headless: 'new',
+  args: ['--no-sandbox', '--disable-setuid-sandbox']
+});
 
     const page = await browser.newPage();
     await page.goto('https://gd.119.gov.cn/society/login', { waitUntil: 'networkidle2' });
