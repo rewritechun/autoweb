@@ -1,48 +1,96 @@
 import puppeteer from 'puppeteer';
 
-export default async function submitTicket(req, res) {
-  const { username, password, content } = req.body;
-
-  if (!username || !password || !content) {
-    return res.status(400).json({ error: '请提供完整的账号、密码和工单内容。' });
-  }
-
+async function main() {
   try {
     const browser = await puppeteer.launch({
-      headless: true,
+      headless: 'new',
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
+
     const page = await browser.newPage();
+    await page.goto('https://gd.119.gov.cn/society/login', { waitUntil: 'networkidle2' });
 
-    // 访问登录页
-    await page.goto('https://gd.119.gov.cn/society/login', {
-      waitUntil: 'networkidle2'
-    });
+    // 点击“账号密码登录”
+    await page.waitForXPath("//div[contains(text(), '账号密码登录')]");
+    const [loginTab] = await page.$x("//div[contains(text(), '账号密码登录')]");
+    if (loginTab) {
+      await loginTab.click();
+      await page.waitForTimeout(300);
+    }
 
-    // 填写账号密码
-    await page.type('#username', username);
-    await page.type('#password', password);
+    // 输入账号
+    await page.waitForSelector('#el-id-6203-3');
+    await page.waitForTimeout(300);
+    await page.type('#el-id-6203-3', '13211012200', { delay: 80 });
 
-    // 点击登录
-    await Promise.all([
-      page.click('#loginBtn'), // 按钮 ID 视实际情况调整
-      page.waitForNavigation({ waitUntil: 'networkidle2' })
-    ]);
+    // 输入密码
+    await page.waitForSelector('#el-id-6203-4');
+    await page.waitForTimeout(300);
+    await page.type('#el-id-6203-4', 'Khhly123.', { delay: 80 });
 
-    // 登录成功后跳转到工单页面
-    await page.goto('https://gd.119.gov.cn/society/ticket', {
-      waitUntil: 'networkidle2'
-    });
+    // 第一次点击“登录”
+    await page.waitForSelector('.login-but.c-white');
+    await page.waitForTimeout(500);
+    await page.click('.login-but.c-white');
 
-    // 填写工单内容
-    await page.type('#ticketContent', content); // 假设这个是工单内容框 ID
-    await page.click('#submitBtn'); // 提交按钮 ID 视页面而定
+    // 第二次点击“登录”
+    await page.waitForSelector('.login-but.c-white.font-20');
+    await page.waitForTimeout(500);
+    await page.click('.login-but.c-white.font-20');
+
+    // 等待登录跳转完成
+    await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 15000 });
+
+    // 关闭弹窗（如果存在）
+    const closeBtn = await page.$('.el-dialog__headerbtn');
+    if (closeBtn) {
+      await page.waitForTimeout(300);
+      await closeBtn.click();
+    }
+
+    // 点击“自查自改”菜单
+    await page.waitForXPath("//li[contains(., '自查自改')]");
+    const [menuItem] = await page.$x("//li[contains(., '自查自改')]");
+    if (menuItem) {
+      await page.waitForTimeout(500);
+      await menuItem.click();
+    }
+
+    // 等待工单列表加载
+    await page.waitForTimeout(2000);
+
+    // 遍历工单查找“未巡查”
+    const rows = await page.$$('tr');
+
+    for (const row of rows) {
+      const statusText = await row.evaluate(el => {
+        const span = el.querySelector('span.c-theme');
+        return span ? span.innerText.trim() : null;
+      });
+
+      if (statusText === '未巡查') {
+        const reportBtn = await row.$('span.weight.c-theme.cursor');
+        if (reportBtn) {
+          await page.waitForTimeout(500);
+          await reportBtn.click();
+          console.log('✅ 已点击未巡查工单');
+          break;
+        }
+      }
+    }
+
+    // 点击“提交”按钮
+    await page.waitForSelector('.el-button.gd-button-confirm', { timeout: 10000 });
+    await page.waitForTimeout(800);
+    await page.click('.el-button.gd-button-confirm');
 
     await browser.close();
-
-    return res.json({ success: true, message: '✅ 工单提交成功' });
-  } catch (error) {
-    console.error('❌ 自动提交失败:', error);
-    return res.status(500).json({ error: '提交过程中发生错误', detail: error.message });
+    console.log('✅ 工单已自动提交');
+    process.exit(0);
+  } catch (err) {
+    console.error('❌ 工单提交失败：', err.message);
+    process.exit(1);
   }
 }
+
+main();
