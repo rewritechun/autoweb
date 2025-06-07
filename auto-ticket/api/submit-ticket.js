@@ -1,101 +1,86 @@
-import puppeteer from 'puppeteer';
-import { join } from 'path';
-
-const chromePath = './.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome';
-
+import { chromium } from '@playwright/test';
 
 async function main() {
-  try {
-    const browser = await puppeteer.launch({
-      headless: 'new',
-      executablePath: chromePath,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+  console.log('🚀 启动 Playwright 脚本...');
+  const browser = await chromium.launch({
+    headless: true,
+  });
 
-    const page = await browser.newPage();
-    await page.goto('https://gd.119.gov.cn/society/login', { waitUntil: 'networkidle2' });
+  const page = await browser.newPage();
+  console.log('🌐 打开登录页面...');
+  await page.goto('https://gd.119.gov.cn/society/login', { waitUntil: 'networkidle' });
 
-    // 点击“账号密码登录”
-    await page.waitForXPath("//div[contains(text(), '账号密码登录')]");
-    const [loginTab] = await page.$x("//div[contains(text(), '账号密码登录')]");
-    if (loginTab) {
-      await loginTab.click();
-      await page.waitForTimeout(300);
-    }
-
-    // 输入账号
-    await page.waitForSelector('#el-id-6203-3');
+  // 点击“账号密码登录”
+  const loginTab = await page.locator('div:has-text("账号密码登录")');
+  if (await loginTab.isVisible()) {
+    await loginTab.click();
     await page.waitForTimeout(300);
-    await page.type('#el-id-6203-3', '13211012200', { delay: 80 });
+  }
 
-    // 输入密码
-    await page.waitForSelector('#el-id-6203-4');
+  // 输入账号
+  await page.fill('#el-id-6203-3', '13211012200');
+  await page.waitForTimeout(300);
+
+  // 输入密码
+  await page.fill('#el-id-6203-4', 'Khhly123.');
+  await page.waitForTimeout(300);
+
+  // 点击两次“登录”
+  const firstLogin = page.locator('.login-but.c-white');
+  if (await firstLogin.isVisible()) {
+    await firstLogin.click();
+    await page.waitForTimeout(500);
+  }
+
+  const secondLogin = page.locator('.login-but.c-white.font-20');
+  if (await secondLogin.isVisible()) {
+    await secondLogin.click();
+    await page.waitForTimeout(500);
+  }
+
+  // 等待跳转完成
+  await page.waitForLoadState('networkidle');
+
+  // 关闭弹窗
+  const closeBtn = page.locator('.el-dialog__headerbtn');
+  if (await closeBtn.isVisible()) {
+    await closeBtn.click();
     await page.waitForTimeout(300);
-    await page.type('#el-id-6203-4', 'Khhly123.', { delay: 80 });
+  }
 
-    // 第一次点击“登录”
-    await page.waitForSelector('.login-but.c-white');
-    await page.waitForTimeout(500);
-    await page.click('.login-but.c-white');
+  // 点击“自查自改”
+  const selfCheck = page.locator('li:has-text("自查自改")');
+  if (await selfCheck.isVisible()) {
+    await selfCheck.click();
+    await page.waitForTimeout(1000);
+  }
 
-    // 第二次点击“登录”
-    await page.waitForSelector('.login-but.c-white.font-20');
-    await page.waitForTimeout(500);
-    await page.click('.login-but.c-white.font-20');
-
-    // 等待登录跳转完成
-    await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 15000 });
-
-    // 关闭弹窗（如果存在）
-    const closeBtn = await page.$('.el-dialog__headerbtn');
-    if (closeBtn) {
-      await page.waitForTimeout(300);
-      await closeBtn.click();
-    }
-
-    // 点击“自查自改”菜单
-    await page.waitForXPath("//li[contains(., '自查自改')]");
-    const [menuItem] = await page.$x("//li[contains(., '自查自改')]");
-    if (menuItem) {
-      await page.waitForTimeout(500);
-      await menuItem.click();
-    }
-
-    // 等待工单列表加载
-    await page.waitForTimeout(2000);
-
-    // 遍历工单查找“未巡查”
-    const rows = await page.$$('tr');
-
-    for (const row of rows) {
-      const statusText = await row.evaluate(el => {
-        const span = el.querySelector('span.c-theme');
-        return span ? span.innerText.trim() : null;
-      });
-
-      if (statusText === '未巡查') {
-        const reportBtn = await row.$('span.weight.c-theme.cursor');
-        if (reportBtn) {
-          await page.waitForTimeout(500);
-          await reportBtn.click();
-          console.log('✅ 已点击未巡查工单');
-          break;
-        }
+  // 遍历工单查找“未巡查”
+  const rows = await page.locator('tr').all();
+  for (const row of rows) {
+    const text = await row.textContent();
+    if (text.includes('未巡查')) {
+      const reportBtn = await row.locator('span.weight.c-theme.cursor');
+      if (await reportBtn.isVisible()) {
+        await reportBtn.click();
+        console.log('✅ 已点击未巡查工单');
+        break;
       }
     }
-
-    // 点击“提交”按钮
-    await page.waitForSelector('.el-button.gd-button-confirm', { timeout: 10000 });
-    await page.waitForTimeout(800);
-    await page.click('.el-button.gd-button-confirm');
-
-    await browser.close();
-    console.log('✅ 工单已自动提交');
-    process.exit(0);
-  } catch (err) {
-    console.error('❌ 工单提交失败：', err.message);
-    process.exit(1);
   }
+
+  // 点击“提交”
+  const submitBtn = page.locator('.el-button.gd-button-confirm');
+  await submitBtn.waitFor({ timeout: 10000 });
+  await page.waitForTimeout(800);
+  await submitBtn.click();
+
+  console.log('✅ 工单已自动提交');
+  await browser.close();
+  process.exit(0);
 }
 
-main();
+main().catch((err) => {
+  console.error('❌ 提交失败：', err.message);
+  process.exit(1);
+});
