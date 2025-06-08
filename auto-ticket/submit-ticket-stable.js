@@ -105,8 +105,8 @@ async function sendWxNotification(message) {
         await page.reload({ waitUntil: 'networkidle' });
         await page.waitForTimeout(3000);
 
-        const table = page.locator('table.el-table__body');
-        await table.screenshot({ path: screenshotPath });
+        const container = page.locator('.el-table');
+        await container.screenshot({ path: screenshotPath });
 
         const msg = [
           `帅哥早上好｜${getChineseDatetime()}`,
@@ -125,7 +125,7 @@ async function sendWxNotification(message) {
               if (err) console.error('❌ 删除截图失败：', err);
               else console.log('🧹 截图已删除');
             });
-          }, 72000000); // 20小时
+          }, 72000000); // 延迟20小时删除
         }
         break;
       } else {
@@ -135,8 +135,8 @@ async function sendWxNotification(message) {
     }
   } catch (err) {
     console.error('❌ 错误：', err);
-    const table = page.locator('table.el-table__body');
-    await table.screenshot({ path: screenshotPath });
+    const container = page.locator('.el-table');
+    await container.screenshot({ path: screenshotPath });
 
     const errMsg = [
       `帅哥早上好｜${getChineseDatetime()}`,
@@ -153,7 +153,7 @@ async function sendWxNotification(message) {
           if (err) console.error('❌ 删除截图失败：', err);
           else console.log('🧹 错误截图已删除');
         });
-      }, 72000000); // 20小时
+      }, 72000000); // 20小时后删除
     }
   } finally {
     await browser.close();
