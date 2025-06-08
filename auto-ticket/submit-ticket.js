@@ -1,21 +1,29 @@
 const { chromium } = require('playwright');
-const fs = require('fs');
 
 (async () => {
   console.log('🚀 启动 Playwright 脚本...');
-  const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({
-    viewport: { width: 1920, height: 1080 },
+  const browser = await chromium.launch({
+    headless: true,
+    args: ['--start-maximized']
   });
+
+  const context = await browser.newContext({
+    viewport: { width: 1600, height: 1200 }
+  });
+
   const page = await context.newPage();
+
+  async function waitAndSnap(label) {
+    console.log(`⏳ 等待 60 秒 [${label}]...`);
+    await page.waitForTimeout(60000);
+    const base64 = (await page.screenshot({ fullPage: true })).toString('base64');
+    console.log(`📷 [${label}] 截图：data:image/png;base64,${base64}`);
+  }
 
   try {
     console.log('🌐 打开登录页面...');
     await page.goto('https://gd.119.gov.cn/society/login');
-    await page.waitForTimeout(30000);
-
-    const shot1 = await page.screenshot({ fullPage: true });
-    console.log('📷 登录页截图（Base64）:', shot1.toString('base64'));
+    await waitAndSnap('登录页面');
 
     console.log('🧭 点击“账号密码登录”标签...');
     const tabs = await page.locator('div.el-tabs__item').all();
@@ -26,71 +34,70 @@ const fs = require('fs');
         break;
       }
     }
-    await page.waitForTimeout(30000);
-    const shot2 = await page.screenshot({ fullPage: true });
-    console.log('📷 登录方式选择后截图:', shot2.toString('base64'));
+    await waitAndSnap('点击账号密码登录后');
 
     console.log('🔐 提交登录信息...');
-    const usernameInput = page.locator('input[placeholder="请输入身份证号/手机号"]');
+    const usernameInput = page.locator('input[placeholder="请输入身份证号/手机号"]').first();
     await usernameInput.waitFor({ timeout: 15000 });
     await usernameInput.click();
-    await page.waitForTimeout(30000);
     await usernameInput.fill('13211012200');
-    await page.waitForTimeout(30000);
 
-    const passwordInput = page.locator('input[placeholder="请输入密码"]');
+    const passwordInput = page.locator('input[placeholder="请输入密码"]').first();
     await passwordInput.waitFor({ timeout: 15000 });
     await passwordInput.click();
-    await page.waitForTimeout(30000);
     await passwordInput.fill('Khhly123.');
-    await page.waitForTimeout(30000);
 
     const loginBtn = page.locator('button.login-but', { hasText: '登录' });
     await loginBtn.waitFor({ timeout: 15000 });
     await loginBtn.click();
-    await page.waitForTimeout(30000);
+    await waitAndSnap('登录后页面');
 
-    const shot3 = await page.screenshot({ fullPage: true });
-    console.log('📷 登录成功后截图:', shot3.toString('base64'));
-
-    console.log('❎ 关闭弹窗...');
+    console.log('❎ 尝试关闭弹窗...');
     const closeBtn = page.locator('button.el-dialog__headerbtn');
     if (await closeBtn.isVisible()) {
       await closeBtn.click();
-      await page.waitForTimeout(30000);
     }
+    await waitAndSnap('关闭弹窗后');
 
     console.log('📋 点击“自查自改”...');
-    await page.locator('text=自查自改').click();
-    await page.waitForTimeout(30000);
+    const checkBtn = page.locator('text=自查自改');
+    await checkBtn.waitFor({ timeout: 15000 });
+    await checkBtn.click();
+    await waitAndSnap('点击自查自改后');
 
-    const shot4 = await page.screenshot({ fullPage: true });
-    console.log('📷 自查自改页面截图:', shot4.toString('base64'));
+    console.log('🔍 检查是否有“未巡查”的记录...');
+    const rows = await page.locator('table tbody tr');
+    const count = await rows.count();
 
-    const tableRows = await page.locator('table tbody tr').all();
     let operated = false;
-    for (const row of tableRows) {
+
+    for (let i = 0; i < count; i++) {
+      const row = rows.nth(i);
       const text = await row.textContent();
       if (text.includes('未巡查')) {
-        const fillBtn = await row.locator('text=工单填报');
+        console.log(`📝 第 ${i + 1} 条为“未巡查”，开始填报...`);
+        const fillBtn = row.locator('text=工单填报');
         await fillBtn.click();
-        await page.waitForTimeout(30000);
+        await waitAndSnap(`工单填报 - 第 ${i + 1} 条`);
+
         const submitBtn = page.locator('button:has-text("提交")');
+        await submitBtn.waitFor({ timeout: 10000 });
         await submitBtn.click();
-        await page.waitForTimeout(30000);
+        await waitAndSnap(`提交完成 - 第 ${i + 1} 条`);
         operated = true;
-        break;
       }
     }
 
     if (!operated) {
-      console.log('✅ 所有任务已完成，无需操作。');
+      console.log('✅ 所有任务均已巡查，无需操作。');
     } else {
-      console.log('✅ 已完成工单填报。');
+      console.log('✅ 所有“未巡查”记录已成功填报并提交。');
     }
 
   } catch (err) {
     console.error('❌ 执行过程中出错：', err);
+    const base64 = (await page.screenshot({ fullPage: true })).toString('base64');
+    console.log(`📷 ❌ 错误时截图：data:image/png;base64,${base64}`);
   } finally {
     await browser.close();
     console.log('🛑 脚本执行完毕，浏览器已关闭');
