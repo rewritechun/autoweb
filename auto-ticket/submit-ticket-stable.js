@@ -68,41 +68,48 @@ const fs = require('fs');
     await checkMenuItem.first().click({ force: true });
     await page.waitForTimeout(3000);
 
-    console.log('📄 检查是否有未巡查工单...');
-    await page.waitForSelector('table tbody', { timeout: 30000 });
-    await page.waitForTimeout(1000);
+    // ✅ 开始循环检查并逐个填报
+    while (true) {
+      console.log('📄 重新检查是否有未巡查工单...');
+      await page.waitForSelector('table tbody', { timeout: 30000 });
+      await page.waitForTimeout(1000);
 
-    const tableRows = await page.locator('table tbody tr').all();
-    let operated = false;
+      const tableRows = await page.locator('table tbody tr').all();
+      let operated = false;
 
-    for (const [i, row] of tableRows.entries()) {
-      const rowText = await row.textContent();
-      console.log(`🔎 第 ${i + 1} 行内容：${rowText?.trim()}`);
-      if (rowText.includes('未巡查')) {
-        console.log(`🛠️ 第 ${i + 1} 行为“未巡查”，点击“工单填报”...`);
-        const fillBtn = row.locator(':text("工单填报")');
-        await fillBtn.first().waitFor({ timeout: 15000 });
-        await fillBtn.first().click({ force: true });
+      for (const [i, row] of tableRows.entries()) {
+        const rowText = await row.textContent();
+        console.log(`🔎 第 ${i + 1} 行内容：${rowText?.trim()}`);
+        if (rowText.includes('未巡查')) {
+          console.log(`🛠️ 第 ${i + 1} 行为“未巡查”，点击“工单填报”...`);
 
-        await page.waitForTimeout(2000);
-        const submitBtn = page.locator('button:has-text("提交")');
-        await submitBtn.waitFor({ timeout: 15000 });
-        await submitBtn.click();
-        await page.waitForTimeout(2000);
+          const fillBtn = row.locator(':text("工单填报")');
+          await fillBtn.first().waitFor({ timeout: 15000 });
+          await fillBtn.first().click({ force: true });
 
-        operated = true;
-        break;
+          await page.waitForTimeout(2000);
+          const submitBtn = page.locator('button:has-text("提交")');
+          await submitBtn.waitFor({ timeout: 15000 });
+          await submitBtn.click();
+          await page.waitForTimeout(2000);
+
+          operated = true;
+          break; // 🟡 提交一条后刷新页面再查下一条
+        }
       }
-    }
 
-    if (!operated) {
-      console.log('✅ 所有任务已完成，无需操作。');
-    } else {
-      console.log('✅ 已完成工单填报。');
+      if (!operated) {
+        console.log('✅ 所有“未巡查”工单已填报完毕，任务完成！');
+        break;
+      } else {
+        console.log('🔄 刷新页面以继续检查...');
+        await page.reload({ waitUntil: 'networkidle' });
+        await page.waitForTimeout(3000);
+      }
     }
   } catch (err) {
     console.error('❌ 执行过程中出错：', err);
-    const sErr = '/root/autoweb/auto-ticket/error_screenshot.png';
+    const sErr = `${basePath}error_screenshot.png`;
     await page.screenshot({ path: sErr, fullPage: true });
     console.log(`📸 错误截图已保存：${sErr}`);
   } finally {
