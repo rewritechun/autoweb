@@ -1,7 +1,6 @@
 const { chromium } = require('playwright');
 const fetch = require('node-fetch');
 const fs = require('fs');
-const path = require('path');
 
 const screenshotName = 'screenshot.png';
 const screenshotPath = `/var/www/html/screenshots/${screenshotName}`;
@@ -113,6 +112,7 @@ async function sendWxNotification(message) {
         await page.waitForTimeout(3000);
 
         await page.screenshot({ path: screenshotPath, fullPage: true });
+
         const message = [
           "✅ 所有“未巡查”工单已成功填报！",
           `📸 当前页面截图如下：`,
