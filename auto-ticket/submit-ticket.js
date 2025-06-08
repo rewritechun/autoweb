@@ -21,29 +21,27 @@ const { chromium } = require('playwright');
         break;
       }
     }
-    await page.waitForTimeout(2000);
+
+    await page.waitForTimeout(4000); // 加长等待，确保页面加载完成
 
     console.log('🔐 提交登录信息...');
-    const usernameInput = page.locator('input[placeholder="请输入身份证号/手机号"]');
-    await usernameInput.waitFor({ timeout: 10000 });
-    await usernameInput.click();
-    await page.waitForTimeout(500);
-    await usernameInput.fill('13211012200');
+    const inputs = await page.locator('form input.el-input__inner'); // CSS 定位所有输入框
+
+    await inputs.nth(0).waitFor({ timeout: 15000 });
+    await inputs.nth(0).click();
+    await inputs.nth(0).fill('13211012200');
     await page.waitForTimeout(500);
 
-    const passwordInput = page.locator('input[placeholder="请输入密码"]');
-    await passwordInput.waitFor({ timeout: 10000 });
-    await passwordInput.click();
-    await page.waitForTimeout(500);
-    await passwordInput.fill('Khhly123.');
+    await inputs.nth(1).click();
+    await inputs.nth(1).fill('Khhly123.');
     await page.waitForTimeout(1000);
 
-    const loginBtn = page.locator('button.login-but', { hasText: '登录' });
+    const loginBtn = page.locator('button.login-but');
     await loginBtn.waitFor({ timeout: 10000 });
     await loginBtn.click();
     await page.waitForTimeout(5000);
 
-    console.log('❎ 关闭弹窗（如有）...');
+    console.log('❎ 关闭弹窗...');
     const closeBtn = page.locator('button.el-dialog__headerbtn');
     if (await closeBtn.isVisible()) {
       await closeBtn.click();
@@ -54,28 +52,30 @@ const { chromium } = require('playwright');
     await page.locator('text=自查自改').click();
     await page.waitForTimeout(3000);
 
-    const tableRows = await page.locator('table tbody tr').all();
+    const rows = await page.locator('table tbody tr').all();
     let operated = false;
-    for (const row of tableRows) {
+
+    for (const row of rows) {
       const text = await row.textContent();
       if (text.includes('未巡查')) {
         const fillBtn = await row.locator('text=工单填报');
         await fillBtn.click();
         await page.waitForTimeout(2000);
-
         const submitBtn = page.locator('button:has-text("提交")');
         await submitBtn.click();
         await page.waitForTimeout(2000);
-
         operated = true;
+        console.log('✅ 提交成功一个未巡查工单');
+        // 页面关闭后继续查找下一个
       }
     }
 
     if (!operated) {
       console.log('✅ 所有任务已完成，无需操作。');
     } else {
-      console.log('✅ 所有“未巡查”工单已成功提交。');
+      console.log('✅ 所有未巡查工单已提交完成。');
     }
+
   } catch (err) {
     console.error('❌ 执行过程中出错：', err);
   } finally {
