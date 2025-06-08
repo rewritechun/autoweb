@@ -21,25 +21,24 @@ const { chromium } = require('playwright');
         break;
       }
     }
-
-    await page.waitForTimeout(5000); // 延长等待时间确保输入框加载
+    await page.waitForTimeout(2000);
 
     console.log('🔐 提交登录信息...');
-    const usernameInput = page.locator('//label[contains(text(), "身份证号")]/following-sibling::div//input');
+    const usernameInput = page.locator('xpath=//*[@id="el-id-7787-3"]');
+    const passwordInput = page.locator('xpath=//*[@id="el-id-7787-4"]');
+
     await usernameInput.waitFor({ timeout: 10000 });
     await usernameInput.click();
     await page.waitForTimeout(500);
     await usernameInput.fill('13211012200');
-    await page.waitForTimeout(500);
 
-    const passwordInput = page.locator('//label[contains(text(), "密码")]/following-sibling::div//input');
     await passwordInput.waitFor({ timeout: 10000 });
     await passwordInput.click();
     await page.waitForTimeout(500);
     await passwordInput.fill('Khhly123.');
     await page.waitForTimeout(1000);
 
-    const loginBtn = page.locator('button.login-but:has-text("登录")');
+    const loginBtn = page.locator('button.login-but');
     await loginBtn.waitFor({ timeout: 10000 });
     await loginBtn.click();
     await page.waitForTimeout(5000);
@@ -55,27 +54,28 @@ const { chromium } = require('playwright');
     await page.locator('text=自查自改').click();
     await page.waitForTimeout(3000);
 
-    const tableRows = await page.locator('table tbody tr').all();
+    const rows = await page.locator('table tbody tr').all();
     let operated = false;
-    for (const row of tableRows) {
+
+    for (const row of rows) {
       const text = await row.textContent();
       if (text.includes('未巡查')) {
-        const fillBtn = await row.locator('text=工单填报');
+        const fillBtn = row.locator('text=工单填报');
         await fillBtn.click();
         await page.waitForTimeout(2000);
         const submitBtn = page.locator('button:has-text("提交")');
         await submitBtn.click();
         await page.waitForTimeout(2000);
         operated = true;
-        break;
       }
     }
 
     if (!operated) {
       console.log('✅ 所有任务已完成，无需操作。');
     } else {
-      console.log('✅ 已完成工单填报。');
+      console.log('✅ 已完成所有未巡查工单填报。');
     }
+
   } catch (err) {
     console.error('❌ 执行过程中出错：', err);
   } finally {
