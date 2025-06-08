@@ -1,5 +1,27 @@
 const { chromium } = require('playwright');
-const fs = require('fs');
+const fetch = require('node-fetch');
+
+// ✅ 企业微信通知函数
+async function sendWxNotification(message) {
+  const webhook = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=7b179414-a827-46f4-8f1b-1004d209795d';
+  const payload = {
+    msgtype: 'markdown',
+    markdown: {
+      content: `### 📋 自查工单脚本通知\n\n${message}\n\n> ⏱️ 执行时间：${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`
+    }
+  };
+  try {
+    const res = await fetch(webhook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    console.log('🔔 企业微信推送结果：', data);
+  } catch (err) {
+    console.error('❌ 推送失败：', err.message);
+  }
+}
 
 (async () => {
   console.log('🚀 启动 Playwright 脚本...');
@@ -68,9 +90,9 @@ const fs = require('fs');
     await checkMenuItem.first().click({ force: true });
     await page.waitForTimeout(3000);
 
-    // ✅ 开始循环检查并逐个填报
+    // ✅ 循环自动填报
     while (true) {
-      console.log('📄 重新检查是否有未巡查工单...');
+      console.log('📄 检查是否有未巡查工单...');
       await page.waitForSelector('table tbody', { timeout: 30000 });
       await page.waitForTimeout(1000);
 
@@ -94,15 +116,16 @@ const fs = require('fs');
           await page.waitForTimeout(2000);
 
           operated = true;
-          break; // 🟡 提交一条后刷新页面再查下一条
+          break;
         }
       }
 
       if (!operated) {
-        console.log('✅ 所有“未巡查”工单已填报完毕，任务完成！');
+        console.log('✅ 所有“未巡查”工单已完成。');
+        await sendWxNotification("✅ 所有“未巡查”工单已自动填报完毕。");
         break;
       } else {
-        console.log('🔄 刷新页面以继续检查...');
+        console.log('🔄 刷新页面以继续...');
         await page.reload({ waitUntil: 'networkidle' });
         await page.waitForTimeout(3000);
       }
@@ -112,6 +135,7 @@ const fs = require('fs');
     const sErr = `${basePath}error_screenshot.png`;
     await page.screenshot({ path: sErr, fullPage: true });
     console.log(`📸 错误截图已保存：${sErr}`);
+    await sendWxNotification("❌ 脚本执行失败，请查看服务器日志和错误截图。");
   } finally {
     await browser.close();
     console.log('🛑 脚本执行完毕，浏览器已关闭');
