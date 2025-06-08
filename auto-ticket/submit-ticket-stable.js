@@ -105,7 +105,7 @@ async function sendWxNotification(message) {
         await page.reload({ waitUntil: 'networkidle' });
         await page.waitForTimeout(3000);
 
-        const table = page.locator('table');
+        const table = page.locator('table.el-table__body');
         await table.screenshot({ path: screenshotPath });
 
         const msg = [
@@ -135,7 +135,7 @@ async function sendWxNotification(message) {
     }
   } catch (err) {
     console.error('❌ 错误：', err);
-    const table = page.locator('table');
+    const table = page.locator('table.el-table__body');
     await table.screenshot({ path: screenshotPath });
 
     const errMsg = [
