@@ -13,11 +13,18 @@ const fs = require('fs');
     await page.goto('https://gd.119.gov.cn/society/login', { timeout: 60000 });
     await page.waitForTimeout(3000);
 
+    // 等待“账号密码登录”标签出现（确保 DOM 和 JS 都加载完）
+    await page.waitForSelector('text=账号密码登录', { timeout: 20000 });
+
+    // 等待额外时间，确保渲染完成
+    await page.waitForTimeout(2000);
+
     // 截图并输出 base64 到日志
     const screenshotBuffer = await page.screenshot({ fullPage: true });
     const base64 = screenshotBuffer.toString('base64');
     console.log('📷 页面截图（Base64）：');
     console.log(`data:image/png;base64,${base64}`);
+
 
     console.log('🧭 点击“账号密码登录”标签...');
     const tabs = await page.locator('div.el-tabs__item').all();
