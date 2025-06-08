@@ -52,13 +52,28 @@ const fs = require('fs');
         break;
       }
     }
-
-    if (!clicked) throw new Error('未找到“登录”按钮！');
-
+    if (!clicked) throw new Error('未找到第一个“登录”按钮！');
     await page.waitForTimeout(10000);
     const s4 = `${basePath}step4_after_login_click.png`;
     await page.screenshot({ path: s4, fullPage: true });
     console.log(`📸 保存截图：${s4}`);
+
+    console.log('🔁 再次点击最终登录按钮...');
+    const finalLoginButtons = await page.locator('button').all();
+    let finalClicked = false;
+    for (const btn of finalLoginButtons) {
+      const text = await btn.innerText();
+      if (text.trim() === '登录') {
+        await btn.click();
+        finalClicked = true;
+        break;
+      }
+    }
+    if (!finalClicked) throw new Error('未找到第二个“登录”按钮！');
+    await page.waitForTimeout(8000);
+    const s4b = `${basePath}step4b_final_login.png`;
+    await page.screenshot({ path: s4b, fullPage: true });
+    console.log(`📸 保存截图：${s4b}`);
 
     console.log('❎ 如有弹窗则关闭...');
     const closeBtn = page.locator('button.el-dialog__headerbtn');
@@ -71,7 +86,9 @@ const fs = require('fs');
     console.log(`📸 保存截图：${s5}`);
 
     console.log('📋 点击“自查自改”菜单...');
-    await page.locator('text=自查自改').click();
+    const checkMenu = page.locator('text=自查自改');
+    await checkMenu.waitFor({ timeout: 30000 });
+    await checkMenu.click();
     await page.waitForTimeout(3000);
     const s6 = `${basePath}step6_after_check_click.png`;
     await page.screenshot({ path: s6, fullPage: true });
