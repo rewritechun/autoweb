@@ -52,7 +52,7 @@ async function sendWxNotification(message) {
     await page.fill('input[placeholder="请输入密码"]', 'Khhly123.');
     await page.waitForTimeout(1000);
 
-    console.log('🔓 点击登录...');
+    console.log('🔓 点击登录按钮...');
     const buttons = await page.locator('button.login-but').all();
     for (const btn of buttons) {
       if ((await btn.innerText()).trim() === '登录') {
@@ -83,7 +83,7 @@ async function sendWxNotification(message) {
     await page.waitForTimeout(3000);
 
     while (true) {
-      console.log('📄 查找未巡查项...');
+      console.log('📄 检查未巡查项...');
       await page.waitForSelector('table tbody');
       await page.waitForTimeout(1000);
 
