@@ -86,10 +86,10 @@ const fs = require('fs');
     console.log(`📸 保存截图：${s5}`);
 
     console.log('📋 尝试点击侧边栏菜单项“自查自改”...');
-    const checkMenuItem = page.locator('li:has-text("自查自改")');
-    await checkMenuItem.waitFor({ timeout: 30000 });
-    await checkMenuItem.scrollIntoViewIfNeeded();
-    await checkMenuItem.click({ force: true });
+    const checkMenuItem = page.locator('li.el-menu-item').filter({ hasText: '自查自改' });
+    await checkMenuItem.first().waitFor({ timeout: 30000 });
+    await checkMenuItem.first().scrollIntoViewIfNeeded();
+    await checkMenuItem.first().click({ force: true });
     await page.waitForTimeout(3000);
     const s6 = `${basePath}step6_after_check_click.png`;
     await page.screenshot({ path: s6, fullPage: true });
