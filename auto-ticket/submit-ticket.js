@@ -1,5 +1,5 @@
-// submit-ticket.js
 const { chromium } = require('playwright');
+const fs = require('fs');
 
 (async () => {
   console.log('🚀 启动 Playwright 脚本...');
@@ -14,6 +14,9 @@ const { chromium } = require('playwright');
     await page.goto('https://gd.119.gov.cn/society/login');
     await page.waitForTimeout(30000);
 
+    const shot1 = await page.screenshot({ fullPage: true });
+    console.log('📷 登录页截图（Base64）:', shot1.toString('base64'));
+
     console.log('🧭 点击“账号密码登录”标签...');
     const tabs = await page.locator('div.el-tabs__item').all();
     for (const tab of tabs) {
@@ -24,6 +27,8 @@ const { chromium } = require('playwright');
       }
     }
     await page.waitForTimeout(30000);
+    const shot2 = await page.screenshot({ fullPage: true });
+    console.log('📷 登录方式选择后截图:', shot2.toString('base64'));
 
     console.log('🔐 提交登录信息...');
     const usernameInput = page.locator('input[placeholder="请输入身份证号/手机号"]');
@@ -45,16 +50,22 @@ const { chromium } = require('playwright');
     await loginBtn.click();
     await page.waitForTimeout(30000);
 
+    const shot3 = await page.screenshot({ fullPage: true });
+    console.log('📷 登录成功后截图:', shot3.toString('base64'));
+
     console.log('❎ 关闭弹窗...');
     const closeBtn = page.locator('button.el-dialog__headerbtn');
     if (await closeBtn.isVisible()) {
       await closeBtn.click();
+      await page.waitForTimeout(30000);
     }
-    await page.waitForTimeout(30000);
 
     console.log('📋 点击“自查自改”...');
     await page.locator('text=自查自改').click();
     await page.waitForTimeout(30000);
+
+    const shot4 = await page.screenshot({ fullPage: true });
+    console.log('📷 自查自改页面截图:', shot4.toString('base64'));
 
     const tableRows = await page.locator('table tbody tr').all();
     let operated = false;
