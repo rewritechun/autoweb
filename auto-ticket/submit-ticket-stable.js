@@ -95,21 +95,30 @@ const fs = require('fs');
     console.log(`📸 保存截图：${s6}`);
 
     console.log('📄 检查是否有未巡查工单...');
+    await page.waitForSelector('table tbody', { timeout: 30000 });
+    await page.waitForTimeout(1000);
+    const tableScreenshot = `${basePath}step6b_table_loaded.png`;
+    await page.screenshot({ path: tableScreenshot, fullPage: true });
+    console.log(`📸 保存截图：${tableScreenshot}`);
+
     const tableRows = await page.locator('table tbody tr').all();
     let operated = false;
 
-    for (const row of tableRows) {
-      const text = await row.textContent();
-      if (text.includes('未巡查')) {
-        console.log('🛠️ 发现“未巡查”工单，点击填报...');
-        const fillBtn = await row.locator('text=工单填报');
-        await fillBtn.click();
+    for (const [i, row] of tableRows.entries()) {
+      const rowText = await row.textContent();
+      console.log(`🔎 第 ${i + 1} 行内容：${rowText?.trim()}`);
+      if (rowText.includes('未巡查')) {
+        console.log(`🛠️ 第 ${i + 1} 行为“未巡查”，尝试点击“工单填报”按钮...`);
+
+        const fillBtn = row.locator('button:has-text("工单填报")');
+        await fillBtn.first().click();
         await page.waitForTimeout(2000);
         const s7 = `${basePath}step7_form_opened.png`;
         await page.screenshot({ path: s7, fullPage: true });
         console.log(`📸 保存截图：${s7}`);
 
         const submitBtn = page.locator('button:has-text("提交")');
+        await submitBtn.waitFor({ timeout: 15000 });
         await submitBtn.click();
         await page.waitForTimeout(2000);
         const s8 = `${basePath}step8_after_submit.png`;
