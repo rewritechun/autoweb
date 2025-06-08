@@ -42,7 +42,7 @@ async function sendWxNotification(message) {
   try {
     await page.goto('https://gd.119.gov.cn/society/login', { waitUntil: 'networkidle' });
     await page.waitForTimeout(1000);
-  await page.screenshot();
+  await page.screenshot({ path: 'step1_open_page.png', fullPage: true });
 
     const tab = page.locator('xpath=//*[@id="pane-1"]/div/div/div[3]/div/div[1]');
     await tab.waitFor({ timeout: 30000 });
