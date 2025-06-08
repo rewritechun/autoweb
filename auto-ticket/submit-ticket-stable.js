@@ -1,28 +1,24 @@
 const { chromium } = require('playwright');
 const fetch = require('node-fetch');
 const fs = require('fs');
-const path = require('path');
 
 const webhookUrl = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=7b179414-a827-46f4-8f1b-1004d209795d';
 
 const now = new Date();
 const timestamp = now.toISOString().replace(/[:.]/g, '-');
-const screenshotDir = '/var/www/html/screenshots';
-const screenshotBaseUrl = 'http://47.115.59.84/screenshots';
+const screenshotName = `screenshot-${timestamp}.png`;
+const screenshotPath = `/var/www/html/screenshots/${screenshotName}`;
+const screenshotUrl = `http://47.115.59.84/screenshots/${screenshotName}`;
 
 function getChineseDatetime() {
   return now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }).replace(/\//g, '-');
 }
 
-async function takeScreenshot(page, step) {
-  const filename = `step-${step}-${timestamp}.png`;
-  const filepath = path.join(screenshotDir, filename);
-  await page.screenshot({ path: filepath, fullPage: true });
-  return `${screenshotBaseUrl}/${filename}`;
-}
-
 async function sendWxNotification(message) {
-  const payload = { msgtype: 'markdown', markdown: { content: message } };
+  const payload = {
+    msgtype: 'markdown',
+    markdown: { content: message }
+  };
   try {
     const res = await fetch(webhookUrl, {
       method: 'POST',
@@ -39,32 +35,37 @@ async function sendWxNotification(message) {
 }
 
 (async () => {
-  console.log('🚀 启动 Playwright 脚本...');
+  console.log('🚀 启动脚本...');
   const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const page = await browser.newPage();
 
   try {
     await page.goto('https://gd.119.gov.cn/society/login', { waitUntil: 'networkidle' });
-    await page.waitForTimeout(2000);
-    const shot1 = await takeScreenshot(page, '01-login-page');
+    await page.waitForTimeout(10000);
 
     const tab = page.locator('xpath=//*[@id="pane-1"]/div/div/div[3]/div/div[1]');
     await tab.waitFor({ timeout: 30000 });
     await tab.click();
     await page.waitForTimeout(3000);
-    const shot2 = await takeScreenshot(page, '02-after-click-tab');
 
     await page.fill('input[placeholder="请输入身份证号/手机号"]', '13211012200');
     await page.fill('input[placeholder="请输入密码"]', 'Khhly123.');
-    await page.waitForTimeout(2000);
-    const shot3 = await takeScreenshot(page, '03-filled-login-info');
+    await page.waitForTimeout(1000);
+
+    const buttons = await page.locator('button.login-but').all();
+    for (const btn of buttons) {
+      if ((await btn.innerText()).trim() === '登录') {
+        await btn.click();
+        break;
+      }
+    }
+    await page.waitForTimeout(10000);
 
     const loginBtn = page.locator('button').filter({ hasText: '登录' }).first();
     if (await loginBtn.isVisible()) {
       await loginBtn.click();
-      await page.waitForTimeout(8000);
     }
-    const shot4 = await takeScreenshot(page, '04-after-login');
+    await page.waitForTimeout(8000);
 
     const closeBtn = page.locator('button.el-dialog__headerbtn');
     if (await closeBtn.isVisible()) {
@@ -76,57 +77,91 @@ async function sendWxNotification(message) {
     await checkMenu.first().waitFor({ timeout: 30000 });
     await checkMenu.first().click();
     await page.waitForTimeout(3000);
-    const shot5 = await takeScreenshot(page, '05-enter-check');
 
-    await page.waitForSelector('table tbody');
-    await page.waitForTimeout(2000);
-    const shot6 = await takeScreenshot(page, '06-table-loaded');
+    while (true) {
+      await page.waitForSelector('table tbody');
+      await page.waitForTimeout(1000);
 
-    const rows = await page.locator('table tbody tr').all();
-    let operated = false;
+      const rows = await page.locator('table tbody tr').all();
+      let operated = false;
 
-    for (const row of rows) {
-      const text = await row.textContent();
-      if (text.includes('未巡查')) {
-        const btn = row.locator(':text("工单填报")');
-        await btn.first().click({ timeout: 10000 });
-        await page.waitForTimeout(2000);
+      for (const row of rows) {
+        const text = await row.textContent();
+        if (text.includes('未巡查')) {
+          const btn = row.locator(':text("工单填报")');
+          await btn.first().click({ timeout: 10000 });
+          await page.waitForTimeout(1000);
 
-        const submit = page.locator('button:has-text("提交")');
-        await submit.click({ timeout: 10000 });
+          const submit = page.locator('button:has-text("提交")');
+          await submit.click({ timeout: 10000 });
+          await page.waitForTimeout(2000);
+
+          operated = true;
+          break;
+        }
+      }
+
+      if (!operated) {
+        await page.reload({ waitUntil: 'networkidle' });
         await page.waitForTimeout(3000);
 
-        const shot7 = await takeScreenshot(page, '07-submitted-ticket');
-        operated = true;
+        // ✨ 滚动表格到最右侧，确保截图完整
+        await page.evaluate(() => {
+          const wrapper = document.querySelector('.el-table__body-wrapper');
+          if (wrapper) {
+            wrapper.scrollLeft = wrapper.scrollWidth;
+          }
+        });
+        await page.waitForTimeout(1000);
+
+        const container = page.locator('.el-table');
+        await container.screenshot({ path: screenshotPath });
+
+        const msg = [
+          `帅哥早上好｜${getChineseDatetime()}`,
+          "",
+          "### 📋 自查工单反馈通知",
+          "",
+          "✅ 所有“未巡查”工单已成功填报！",
+          "",
+          "📸 当前页面截图如下：",
+          `![截图](${screenshotUrl})`,
+        ].join('\n');
+
+        await sendWxNotification(msg);
         break;
+      } else {
+        await page.reload({ waitUntil: 'networkidle' });
+        await page.waitForTimeout(3000);
       }
     }
-
-    const finalShot = await takeScreenshot(page, '08-final-check');
-    const msg = [
-      `帅哥早上好｜${getChineseDatetime()}`,
-      '',
-      '### 📋 自查工单反馈通知',
-      '',
-      operated ? '✅ 所有“未巡查”工单已成功填报！' : '✅ 当前无未巡查工单，系统状态正常！',
-      '',
-      '📸 当前页面截图如下：',
-      `![截图](${finalShot})`
-    ].join('\n');
-    await sendWxNotification(msg);
-
   } catch (err) {
-    console.error('❌ 执行过程中出错：', err);
-    const errShot = await takeScreenshot(page, '99-error');
-    const msg = [
+    console.error('❌ 错误：', err);
+
+    // 同样滚动后再截图错误页面
+    await page.evaluate(() => {
+      const wrapper = document.querySelector('.el-table__body-wrapper');
+      if (wrapper) {
+        wrapper.scrollLeft = wrapper.scrollWidth;
+      }
+    });
+    await page.waitForTimeout(1000);
+
+    const container = page.locator('.el-table');
+    await container.screenshot({ path: screenshotPath });
+
+    const errMsg = [
       `帅哥早上好｜${getChineseDatetime()}`,
-      '',
-      '❌ 自查流程出错，请检查截图：',
-      `![错误截图](${errShot})`
+      "",
+      "### ❌ 自查工单执行失败",
+      "",
+      "📸 错误截图如下：",
+      `![错误截图](${screenshotUrl})`,
     ].join('\n');
-    await sendWxNotification(msg);
+
+    await sendWxNotification(errMsg);
   } finally {
     await browser.close();
-    console.log('🛑 脚本执行完毕，浏览器已关闭');
+    console.log('🛑 脚本结束');
   }
 })();
