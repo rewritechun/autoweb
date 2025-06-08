@@ -105,6 +105,15 @@ async function sendWxNotification(message) {
         await page.reload({ waitUntil: 'networkidle' });
         await page.waitForTimeout(3000);
 
+        // ✨ 滚动表格到最右侧，确保截图完整
+        await page.evaluate(() => {
+          const wrapper = document.querySelector('.el-table__body-wrapper');
+          if (wrapper) {
+            wrapper.scrollLeft = wrapper.scrollWidth;
+          }
+        });
+        await page.waitForTimeout(1000);
+
         const container = page.locator('.el-table');
         await container.screenshot({ path: screenshotPath });
 
@@ -128,6 +137,16 @@ async function sendWxNotification(message) {
     }
   } catch (err) {
     console.error('❌ 错误：', err);
+
+    // 同样滚动后再截图错误页面
+    await page.evaluate(() => {
+      const wrapper = document.querySelector('.el-table__body-wrapper');
+      if (wrapper) {
+        wrapper.scrollLeft = wrapper.scrollWidth;
+      }
+    });
+    await page.waitForTimeout(1000);
+
     const container = page.locator('.el-table');
     await container.screenshot({ path: screenshotPath });
 
