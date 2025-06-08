@@ -41,18 +41,21 @@ async function sendWxNotification(message) {
 
   try {
     await page.goto('https://gd.119.gov.cn/society/login', { waitUntil: 'networkidle' });
-    await page.screenshot({ path: '/var/www/html/screenshots/step1_open_page.png', fullPage: true });
+    await page.waitForTimeout(1000);
+  await page.screenshot();
 
     const tab = page.locator('xpath=//*[@id="pane-1"]/div/div/div[3]/div/div[1]');
     await tab.waitFor({ timeout: 30000 });
     await tab.click();
     await page.waitForTimeout(3000);
-    await page.screenshot({ path: '/var/www/html/screenshots/step2_click_account_login.png', fullPage: true });
+    await page.waitForTimeout(1000);
+  await page.screenshot();
 
     await page.fill('input[placeholder="请输入身份证号/手机号"]', '13211012200');
     await page.fill('input[placeholder="请输入密码"]', 'Khhly123.');
     await page.waitForTimeout(1000);
-    await page.screenshot({ path: '/var/www/html/screenshots/step3_filled_credentials.png', fullPage: true });
+    await page.waitForTimeout(1000);
+  await page.screenshot();
 
     const buttons = await page.locator('button.login-but').all();
     for (const btn of buttons) {
@@ -62,14 +65,16 @@ async function sendWxNotification(message) {
       }
     }
     await page.waitForTimeout(8000);
-    await page.screenshot({ path: '/var/www/html/screenshots/step4_after_login_click.png', fullPage: true });
+    await page.waitForTimeout(1000);
+  await page.screenshot();
 
     const loginBtn = page.locator('button').filter({ hasText: '登录' }).first();
     if (await loginBtn.isVisible()) {
       await loginBtn.click();
     }
     await page.waitForTimeout(8000);
-    await page.screenshot({ path: '/var/www/html/screenshots/step4b_final_login.png', fullPage: true });
+    await page.waitForTimeout(1000);
+  await page.screenshot();
 
     const closeBtn = page.locator('button.el-dialog__headerbtn');
     if (await closeBtn.isVisible()) {
@@ -81,11 +86,13 @@ async function sendWxNotification(message) {
     await checkMenu.first().waitFor({ timeout: 30000 });
     await checkMenu.first().click();
     await page.waitForTimeout(3000);
-    await page.screenshot({ path: '/var/www/html/screenshots/step6_after_check_click.png', fullPage: true });
+    await page.waitForTimeout(1000);
+  await page.screenshot();
 
     await page.waitForSelector('table tbody');
     await page.waitForTimeout(1000);
-    await page.screenshot({ path: '/var/www/html/screenshots/step6b_table_loaded.png', fullPage: true });
+    await page.waitForTimeout(1000);
+  await page.screenshot();
 
     const rows = await page.locator('table tbody tr').all();
     let operated = false;
@@ -108,7 +115,8 @@ async function sendWxNotification(message) {
     wrapper.scrollLeft = wrapper.scrollWidth;
   }
 });
-        await page.screenshot({ path: screenshotPath, fullPage: true });
+        await page.waitForTimeout(1000);
+  await page.screenshot();
 
         operated = true;
         break;
@@ -122,7 +130,8 @@ async function sendWxNotification(message) {
     wrapper.scrollLeft = wrapper.scrollWidth;
   }
 });
-    await page.screenshot({ path: screenshotPath, fullPage: true });
+    await page.waitForTimeout(1000);
+  await page.screenshot();
 
     const msg = [
       `帅哥早上好｜${getChineseDatetime()}`,
@@ -147,7 +156,8 @@ async function sendWxNotification(message) {
     wrapper.scrollLeft = wrapper.scrollWidth;
   }
 });
-    await page.screenshot({ path: '/var/www/html/screenshots/error_screenshot.png', fullPage: true });
+    await page.waitForTimeout(1000);
+  await page.screenshot();
 
     const msg = [
       `帅哥早上好｜${getChineseDatetime()}`,
