@@ -3,14 +3,16 @@ const fetch = require('node-fetch');
 const fs = require('fs');
 const path = require('path');
 
-const tmpPath = '/tmp/screenshot.png';
+const screenshotName = 'screenshot.png';
+const screenshotPath = `/var/www/html/screenshots/${screenshotName}`;
+const screenshotUrl = `http://47.115.59.84/screenshots/${screenshotName}`;
 const webhook = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=7b179414-a827-46f4-8f1b-1004d209795d';
 
 async function sendWxNotification(message) {
   const payload = {
     msgtype: 'markdown',
     markdown: {
-      content: `### 📋 自查工单反馈通知\n\n${message}\n\n> ⏱️ ${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`
+      content: `### 📋 自查工单反馈通知\n\n${message}\n\n> 🕒 ${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`
     }
   };
 
@@ -110,15 +112,15 @@ async function sendWxNotification(message) {
         await page.reload({ waitUntil: 'networkidle' });
         await page.waitForTimeout(3000);
 
-        await page.screenshot({ path: tmpPath, fullPage: true });
+        await page.screenshot({ path: screenshotPath, fullPage: true });
         const message = [
           "✅ 所有“未巡查”工单已成功填报！",
-          `📸 当前页面截图已保存于：\n> \`${tmpPath}\``,
-          `🧹 截图即将自动删除...`
+          `📸 当前页面截图如下：`,
+          `![截图](${screenshotUrl})`
         ].join('\n\n');
 
         if (await sendWxNotification(message)) {
-          fs.unlinkSync(tmpPath);
+          fs.unlinkSync(screenshotPath);
           console.log('🧹 截图已删除');
         }
         break;
@@ -129,11 +131,14 @@ async function sendWxNotification(message) {
     }
   } catch (err) {
     console.error('❌ 错误：', err);
-    await page.screenshot({ path: tmpPath });
-    const errorMsg = `❌ 脚本执行失败，错误截图已保存：\n> \`${tmpPath}\``;
+    await page.screenshot({ path: screenshotPath });
+    const errorMsg = [
+      `❌ 脚本执行失败，错误截图如下：`,
+      `![错误截图](${screenshotUrl})`
+    ].join('\n\n');
 
     if (await sendWxNotification(errorMsg)) {
-      fs.unlinkSync(tmpPath);
+      fs.unlinkSync(screenshotPath);
       console.log('🧹 错误截图已删除');
     }
   } finally {
