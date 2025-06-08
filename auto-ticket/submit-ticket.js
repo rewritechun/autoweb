@@ -24,26 +24,26 @@ const { chromium } = require('playwright');
     await page.waitForTimeout(2000);
 
     console.log('🔐 提交登录信息...');
-    const usernameInput = page.locator('xpath=//*[@id="el-id-7787-3"]');
-    const passwordInput = page.locator('xpath=//*[@id="el-id-7787-4"]');
-
+    const usernameInput = page.locator('input[placeholder="请输入身份证号/手机号"]');
     await usernameInput.waitFor({ timeout: 10000 });
     await usernameInput.click();
     await page.waitForTimeout(500);
     await usernameInput.fill('13211012200');
+    await page.waitForTimeout(500);
 
+    const passwordInput = page.locator('input[placeholder="请输入密码"]');
     await passwordInput.waitFor({ timeout: 10000 });
     await passwordInput.click();
     await page.waitForTimeout(500);
     await passwordInput.fill('Khhly123.');
     await page.waitForTimeout(1000);
 
-    const loginBtn = page.locator('button.login-but');
+    const loginBtn = page.locator('button.login-but', { hasText: '登录' });
     await loginBtn.waitFor({ timeout: 10000 });
     await loginBtn.click();
     await page.waitForTimeout(5000);
 
-    console.log('❎ 关闭弹窗...');
+    console.log('❎ 关闭弹窗（如有）...');
     const closeBtn = page.locator('button.el-dialog__headerbtn');
     if (await closeBtn.isVisible()) {
       await closeBtn.click();
@@ -54,18 +54,19 @@ const { chromium } = require('playwright');
     await page.locator('text=自查自改').click();
     await page.waitForTimeout(3000);
 
-    const rows = await page.locator('table tbody tr').all();
+    const tableRows = await page.locator('table tbody tr').all();
     let operated = false;
-
-    for (const row of rows) {
+    for (const row of tableRows) {
       const text = await row.textContent();
       if (text.includes('未巡查')) {
-        const fillBtn = row.locator('text=工单填报');
+        const fillBtn = await row.locator('text=工单填报');
         await fillBtn.click();
         await page.waitForTimeout(2000);
+
         const submitBtn = page.locator('button:has-text("提交")');
         await submitBtn.click();
         await page.waitForTimeout(2000);
+
         operated = true;
       }
     }
@@ -73,9 +74,8 @@ const { chromium } = require('playwright');
     if (!operated) {
       console.log('✅ 所有任务已完成，无需操作。');
     } else {
-      console.log('✅ 已完成所有未巡查工单填报。');
+      console.log('✅ 所有“未巡查”工单已成功提交。');
     }
-
   } catch (err) {
     console.error('❌ 执行过程中出错：', err);
   } finally {
