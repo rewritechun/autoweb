@@ -24,14 +24,14 @@ const { chromium } = require('playwright');
     await page.waitForTimeout(2000);
 
     console.log('🔐 提交登录信息...');
-    const usernameInput = page.locator('#el-id-6044-3');
+    const usernameInput = page.locator('input[placeholder="请输入身份证号/手机号"]');
     await usernameInput.waitFor({ timeout: 10000 });
     await usernameInput.click();
     await page.waitForTimeout(500);
     await usernameInput.fill('13211012200');
     await page.waitForTimeout(500);
 
-    const passwordInput = page.locator('#el-id-6044-6');
+    const passwordInput = page.locator('input[placeholder="请输入密码"]');
     await passwordInput.waitFor({ timeout: 10000 });
     await passwordInput.click();
     await page.waitForTimeout(500);
@@ -59,21 +59,26 @@ const { chromium } = require('playwright');
     for (const row of tableRows) {
       const text = await row.textContent();
       if (text.includes('未巡查')) {
+        const dateCell = await row.locator('td').first();
+        const dateText = await dateCell.textContent();
+        console.log(`📌 发现未巡查工单，日期：${dateText.trim()}`);
+
         const fillBtn = await row.locator('text=工单填报');
         await fillBtn.click();
         await page.waitForTimeout(2000);
+
         const submitBtn = page.locator('button:has-text("提交")');
         await submitBtn.click();
         await page.waitForTimeout(2000);
+
+        console.log(`✅ 已完成 ${dateText.trim()} 工单填报`);
         operated = true;
-        break;
+        break; // 暂时只处理一条
       }
     }
 
     if (!operated) {
       console.log('✅ 所有任务已完成，无需操作。');
-    } else {
-      console.log('✅ 已完成工单填报。');
     }
   } catch (err) {
     console.error('❌ 执行过程中出错：', err);
