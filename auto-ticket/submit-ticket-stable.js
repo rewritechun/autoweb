@@ -101,7 +101,13 @@ async function sendWxNotification(message) {
         await submit.click({ timeout: 10000 });
         await page.waitForTimeout(2000);
 
-        await page.evaluate(() => window.scrollTo(document.body.scrollWidth, 0));
+        await page.evaluate(() => {
+  window.scrollTo(document.body.scrollWidth, 0);
+  const wrapper = document.querySelector('.el-table__body-wrapper');
+  if (wrapper) {
+    wrapper.scrollLeft = wrapper.scrollWidth;
+  }
+});
         await page.screenshot({ path: screenshotPath, fullPage: true });
 
         operated = true;
@@ -109,7 +115,13 @@ async function sendWxNotification(message) {
       }
     }
 
-    await page.evaluate(() => window.scrollTo(document.body.scrollWidth, 0));
+    await page.evaluate(() => {
+  window.scrollTo(document.body.scrollWidth, 0);
+  const wrapper = document.querySelector('.el-table__body-wrapper');
+  if (wrapper) {
+    wrapper.scrollLeft = wrapper.scrollWidth;
+  }
+});
     await page.screenshot({ path: screenshotPath, fullPage: true });
 
     const msg = [
@@ -128,7 +140,13 @@ async function sendWxNotification(message) {
 
   } catch (err) {
     console.error('❌ 执行过程中出错：', err);
-    await page.evaluate(() => window.scrollTo(document.body.scrollWidth, 0));
+    await page.evaluate(() => {
+  window.scrollTo(document.body.scrollWidth, 0);
+  const wrapper = document.querySelector('.el-table__body-wrapper');
+  if (wrapper) {
+    wrapper.scrollLeft = wrapper.scrollWidth;
+  }
+});
     await page.screenshot({ path: '/var/www/html/screenshots/error_screenshot.png', fullPage: true });
 
     const msg = [
