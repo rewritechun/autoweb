@@ -105,17 +105,19 @@ async function sendWxNotification(message) {
         await page.reload({ waitUntil: 'networkidle' });
         await page.waitForTimeout(3000);
 
-        // ✨ 滚动表格到最右侧，确保截图完整
+        // ✨ 滚动到表格最右侧，确保所有列加载出来
         await page.evaluate(() => {
           const wrapper = document.querySelector('.el-table__body-wrapper');
           if (wrapper) {
             wrapper.scrollLeft = wrapper.scrollWidth;
+            wrapper.scrollTop = wrapper.scrollHeight;
           }
         });
-        await page.waitForTimeout(1000);
+        await page.waitForTimeout(1000); // 等待重绘
 
-        const container = page.locator('.el-table');
-        await container.screenshot({ path: screenshotPath });
+        // ✅ 精确截图目标
+        const wrapper = page.locator('.el-table__body-wrapper');
+        await wrapper.screenshot({ path: screenshotPath });
 
         const msg = [
           `帅哥早上好｜${getChineseDatetime()}`,
@@ -138,17 +140,17 @@ async function sendWxNotification(message) {
   } catch (err) {
     console.error('❌ 错误：', err);
 
-    // 同样滚动后再截图错误页面
     await page.evaluate(() => {
       const wrapper = document.querySelector('.el-table__body-wrapper');
       if (wrapper) {
         wrapper.scrollLeft = wrapper.scrollWidth;
+        wrapper.scrollTop = wrapper.scrollHeight;
       }
     });
     await page.waitForTimeout(1000);
 
-    const container = page.locator('.el-table');
-    await container.screenshot({ path: screenshotPath });
+    const wrapper = page.locator('.el-table__body-wrapper');
+    await wrapper.screenshot({ path: screenshotPath });
 
     const errMsg = [
       `帅哥早上好｜${getChineseDatetime()}`,
