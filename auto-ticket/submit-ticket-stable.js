@@ -119,14 +119,7 @@ async function sendWxNotification(message) {
           `![截图](${screenshotUrl})`,
         ].join('\n');
 
-        if (await sendWxNotification(msg)) {
-          setTimeout(() => {
-            fs.unlink(screenshotPath, err => {
-              if (err) console.error('❌ 删除截图失败：', err);
-              else console.log('🧹 截图已删除');
-            });
-          }, 72000000); // 延迟20小时删除
-        }
+        await sendWxNotification(msg);
         break;
       } else {
         await page.reload({ waitUntil: 'networkidle' });
@@ -147,14 +140,7 @@ async function sendWxNotification(message) {
       `![错误截图](${screenshotUrl})`,
     ].join('\n');
 
-    if (await sendWxNotification(errMsg)) {
-      setTimeout(() => {
-        fs.unlink(screenshotPath, err => {
-          if (err) console.error('❌ 删除截图失败：', err);
-          else console.log('🧹 错误截图已删除');
-        });
-      }, 72000000); // 20小时后删除
-    }
+    await sendWxNotification(errMsg);
   } finally {
     await browser.close();
     console.log('🛑 脚本结束');
