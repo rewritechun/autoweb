@@ -105,12 +105,8 @@ async function sendWxNotification(message) {
         await page.reload({ waitUntil: 'networkidle' });
         await page.waitForTimeout(3000);
 
-        await page.evaluate(() => {
-          window.scrollTo(0, document.body.scrollHeight);
-        });
-        await page.waitForTimeout(2000);
-
-        await page.screenshot({ path: screenshotPath, fullPage: true });
+        const table = page.locator('table');
+        await table.screenshot({ path: screenshotPath });
 
         const msg = [
           `帅哥早上好｜${getChineseDatetime()}`,
@@ -129,7 +125,7 @@ async function sendWxNotification(message) {
               if (err) console.error('❌ 删除截图失败：', err);
               else console.log('🧹 截图已删除');
             });
-          }, 60000);
+          }, 72000000); // 20小时
         }
         break;
       } else {
@@ -139,18 +135,15 @@ async function sendWxNotification(message) {
     }
   } catch (err) {
     console.error('❌ 错误：', err);
-    await page.evaluate(() => {
-      window.scrollTo(0, document.body.scrollHeight);
-    });
-    await page.waitForTimeout(2000);
-    await page.screenshot({ path: screenshotPath });
+    const table = page.locator('table');
+    await table.screenshot({ path: screenshotPath });
 
     const errMsg = [
       `帅哥早上好｜${getChineseDatetime()}`,
       "",
       "### ❌ 自查工单执行失败",
       "",
-      `📸 错误截图如下：`,
+      "📸 错误截图如下：",
       `![错误截图](${screenshotUrl})`,
     ].join('\n');
 
@@ -160,7 +153,7 @@ async function sendWxNotification(message) {
           if (err) console.error('❌ 删除截图失败：', err);
           else console.log('🧹 错误截图已删除');
         });
-      }, 60000);
+      }, 72000000); // 20小时
     }
   } finally {
     await browser.close();
