@@ -4,25 +4,26 @@ const fs = require('fs');
 (async () => {
   console.log('🚀 启动 Playwright 脚本...');
   const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({
-    viewport: { width: 1920, height: 1080 }
-  });
+  const context = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
   const page = await context.newPage();
-
   const basePath = '/root/autoweb/auto-ticket/';
 
   try {
     console.log('🌐 打开登录页面...');
     await page.goto('https://gd.119.gov.cn/society/login', { waitUntil: 'networkidle' });
     await page.waitForTimeout(10000);
-    await page.screenshot({ path: `${basePath}step1_open_page.png`, fullPage: true });
+    const s1 = `${basePath}step1_open_page.png`;
+    await page.screenshot({ path: s1, fullPage: true });
+    console.log(`📸 保存截图：${s1}`);
 
     console.log('🧭 点击“账号密码登录”标签（XPath）...');
     const tab = page.locator('xpath=//*[@id="pane-1"]/div/div/div[3]/div/div[1]');
     await tab.waitFor({ timeout: 30000 });
     await tab.click();
     await page.waitForTimeout(3000);
-    await page.screenshot({ path: `${basePath}step2_click_account_login.png`, fullPage: true });
+    const s2 = `${basePath}step2_click_account_login.png`;
+    await page.screenshot({ path: s2, fullPage: true });
+    console.log(`📸 保存截图：${s2}`);
 
     console.log('🔐 输入账号密码...');
     const usernameInput = page.locator('input[placeholder="请输入身份证号/手机号"]');
@@ -36,14 +37,28 @@ const fs = require('fs');
     await passwordInput.click();
     await page.waitForTimeout(1000);
     await passwordInput.fill('Khhly123.');
-    await page.screenshot({ path: `${basePath}step3_filled_credentials.png`, fullPage: true });
+    const s3 = `${basePath}step3_filled_credentials.png`;
+    await page.screenshot({ path: s3, fullPage: true });
+    console.log(`📸 保存截图：${s3}`);
 
     console.log('🔓 点击登录按钮...');
-    const loginBtn = page.locator('button.login-but', { hasText: '登录' });
-    await loginBtn.waitFor({ timeout: 10000 });
-    await loginBtn.click();
+    const loginButtons = await page.locator('button.login-but').all();
+    let clicked = false;
+    for (const btn of loginButtons) {
+      const text = await btn.innerText();
+      if (text.trim() === '登录') {
+        await btn.click();
+        clicked = true;
+        break;
+      }
+    }
+
+    if (!clicked) throw new Error('未找到“登录”按钮！');
+
     await page.waitForTimeout(10000);
-    await page.screenshot({ path: `${basePath}step4_after_login_click.png`, fullPage: true });
+    const s4 = `${basePath}step4_after_login_click.png`;
+    await page.screenshot({ path: s4, fullPage: true });
+    console.log(`📸 保存截图：${s4}`);
 
     console.log('❎ 如有弹窗则关闭...');
     const closeBtn = page.locator('button.el-dialog__headerbtn');
@@ -51,12 +66,16 @@ const fs = require('fs');
       await closeBtn.click();
       await page.waitForTimeout(2000);
     }
-    await page.screenshot({ path: `${basePath}step5_after_dialog_close.png`, fullPage: true });
+    const s5 = `${basePath}step5_after_dialog_close.png`;
+    await page.screenshot({ path: s5, fullPage: true });
+    console.log(`📸 保存截图：${s5}`);
 
     console.log('📋 点击“自查自改”菜单...');
     await page.locator('text=自查自改').click();
     await page.waitForTimeout(3000);
-    await page.screenshot({ path: `${basePath}step6_after_check_click.png`, fullPage: true });
+    const s6 = `${basePath}step6_after_check_click.png`;
+    await page.screenshot({ path: s6, fullPage: true });
+    console.log(`📸 保存截图：${s6}`);
 
     console.log('📄 检查是否有未巡查工单...');
     const tableRows = await page.locator('table tbody tr').all();
@@ -65,17 +84,20 @@ const fs = require('fs');
     for (const row of tableRows) {
       const text = await row.textContent();
       if (text.includes('未巡查')) {
-        console.log('发现“未巡查”工单，点击填报...');
+        console.log('🛠️ 发现“未巡查”工单，点击填报...');
         const fillBtn = await row.locator('text=工单填报');
         await fillBtn.click();
         await page.waitForTimeout(2000);
-        await page.screenshot({ path: `${basePath}step7_form_opened.png`, fullPage: true });
+        const s7 = `${basePath}step7_form_opened.png`;
+        await page.screenshot({ path: s7, fullPage: true });
+        console.log(`📸 保存截图：${s7}`);
 
-        console.log('📝 点击提交按钮...');
         const submitBtn = page.locator('button:has-text("提交")');
         await submitBtn.click();
         await page.waitForTimeout(2000);
-        await page.screenshot({ path: `${basePath}step8_after_submit.png`, fullPage: true });
+        const s8 = `${basePath}step8_after_submit.png`;
+        await page.screenshot({ path: s8, fullPage: true });
+        console.log(`📸 保存截图：${s8}`);
 
         operated = true;
         break;
@@ -84,13 +106,17 @@ const fs = require('fs');
 
     if (!operated) {
       console.log('✅ 所有任务已完成，无需操作。');
-      await page.screenshot({ path: `${basePath}step9_all_tasks_done.png`, fullPage: true });
+      const s9 = `${basePath}step9_all_tasks_done.png`;
+      await page.screenshot({ path: s9, fullPage: true });
+      console.log(`📸 保存截图：${s9}`);
     } else {
       console.log('✅ 已完成工单填报。');
     }
   } catch (err) {
     console.error('❌ 执行过程中出错：', err);
-    await page.screenshot({ path: `${basePath}error_screenshot.png`, fullPage: true });
+    const sErr = `${basePath}error_screenshot.png`;
+    await page.screenshot({ path: sErr, fullPage: true });
+    console.log(`📸 错误截图已保存：${sErr}`);
   } finally {
     await browser.close();
     console.log('🛑 脚本执行完毕，浏览器已关闭');
